@@ -1,0 +1,17 @@
+{
+  "name": "quux",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/lodash": "^4.14.150",
+    "@types/node": "^13.13.4",
+    "lodash": "^4.17.15"
+  }
+}
