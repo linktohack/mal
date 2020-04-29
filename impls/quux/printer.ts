@@ -1,6 +1,6 @@
 import { MalType } from "./reader";
 
-function assertNever(x: never) {
+export function assertNever(x: never) {
   return new Error(`epecting x to be never: ${x}`);
 }
 
