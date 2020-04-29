@@ -1,33 +1,63 @@
 import { inspect } from "util";
 import { LOG } from "./utils";
-import { MalType } from "./types";
+import { MalType, EnvType } from "./types";
 
 export class Env {
   data: {
-    [k: string]: ((...args: any[]) => MalType) | MalType;
+    [k: string]: EnvType;
   } = {
-    "+": (a: any, b: any) => {
-      LOG("+", { a, b });
+    "+": (...args) => {
+      LOG("+", args);
+      const number = args.reduce((prev, curr) => {
+        if (curr.type !== "atom" || curr.atom.type !== "number") {
+          throw new Error("+ can be use with number");
+        }
+        return prev + curr.atom.number;
+      }, 0);
       return {
         type: "atom",
-        atom: { type: "number", number: a.atom.number + b.atom.number },
+        atom: { type: "number", number },
       };
-    }, // FIXME(QL) Strong typing
-    "-": (a: any, b: any) => ({
-      type: "atom",
-      atom: { type: "number", number: a.atom.number - b.atom.number },
-    }),
-    "*": (a: any, b: any) => {
-      LOG("+", { a, b });
+    },
+    "-": (...args) => {
+      LOG("-", args);
+      const number = args.reduce((prev, curr) => {
+        if (curr.type !== "atom" || curr.atom.type !== "number") {
+          throw new Error("- can be use with number");
+        }
+        return prev - curr.atom.number;
+      }, 0);
       return {
         type: "atom",
-        atom: { type: "number", number: a.atom.number * b.atom.number },
+        atom: { type: "number", number },
       };
-    }, // FIXME(QL) Strong typing
-    "/": (a: any, b: any) => ({
-      type: "atom",
-      atom: { type: "number", number: a.atom.number / b.atom.number },
-    }),
+    },
+    "*": (...args) => {
+      LOG("*", args);
+      const number = args.reduce((prev, curr) => {
+        if (curr.type !== "atom" || curr.atom.type !== "number") {
+          throw new Error("* can be use with number");
+        }
+        return prev * curr.atom.number;
+      }, 0);
+      return {
+        type: "atom",
+        atom: { type: "number", number },
+      };
+    },
+    "/": (...args) => {
+      LOG("/", args);
+      const number = args.reduce((prev, curr) => {
+        if (curr.type !== "atom" || curr.atom.type !== "number") {
+          throw new Error("/ can be use with number");
+        }
+        return prev / curr.atom.number;
+      }, 0);
+      return {
+        type: "atom",
+        atom: { type: "number", number },
+      };
+    },
   };
   constructor(public outer?: Env) {}
 

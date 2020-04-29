@@ -7,12 +7,16 @@ export function pr_str(ast: MalType, print_readably = true): string {
     if (atom.type === "true" || atom.type === "false" || atom.type === "nil") {
       return atom.type;
     }
-    if (
-      atom.type === "number" ||
-      atom.type === "keyword" ||
-      atom.type === "symbol"
-    ) {
-      return (ast.atom as any)[atom.type];
+    if (atom.type === "number") {
+      return `${atom.number}`;
+    }
+
+    if (atom.type === "keyword") {
+      return atom.keyword;
+    }
+
+    if (atom.type === "symbol") {
+      return atom.symbol;
     }
 
     if (atom.type === "string") {

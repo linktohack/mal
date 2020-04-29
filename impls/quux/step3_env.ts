@@ -19,27 +19,36 @@ function EVAL(ast: MalType, env: Env): MalType {
       return ast;
     } else {
       const f1 = ast.list[0];
-      const f2 = ast.list[1] as any;
+      const f2 = ast.list[1];
       const f3 = ast.list[2];
 
       if (f1.type === "atom" && f1.atom.type === "symbol") {
         if (f1.atom.symbol === "def!") {
-          return env.set(f2.atom.symbol, EVAL(f3, env)) as any;
+          if (f2.type !== "atom" || f2.atom.type !== "symbol") {
+            throw new Error("second element of def! must be a symbol");
+          }
+          return env.set(f2.atom.symbol, EVAL(f3, env)) as MalType; // FIXME(QL): Maybe two namepsace for function as well?
         }
 
         if (f1.atom.symbol === "let*") {
+          if (f2.type !== "list") {
+            throw new Error("second element of let* must be a list");
+          }
           const newEnv = new Env(env);
           for (let index = 0; index < f2.list.length / 2; index++) {
             LOG("index", index);
             const f22 = f2.list[2 * index];
             const f23 = f2.list[2 * index + 1];
             LOG("let*", inspect(f22, false, 10), inspect(f23, false, 10));
+            if (f22.type !== "atom" || f22.atom.type !== "symbol") {
+              throw new Error("must be a symbol");
+            }
             newEnv.set(f22.atom.symbol, EVAL(f23, newEnv));
           }
           return EVAL(f3, newEnv);
         }
       }
-      const all = eval_ast(ast, env) as any;
+      const all = eval_ast(ast, env) as any; // FIXME(QL) First is a function
       const [f, ...args] = all.list;
       LOG("call", f, args);
       return f(...args);
@@ -53,7 +62,7 @@ function eval_ast(ast: MalType, env: Env): MalType {
     case "atom":
       switch (ast.atom.type) {
         case "symbol":
-          return env.get(ast.atom.symbol) as any;
+          return env.get(ast.atom.symbol) as any; // FIXME(QL) First is a function
         default:
           return ast;
       }
