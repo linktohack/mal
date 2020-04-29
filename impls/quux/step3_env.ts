@@ -1,15 +1,10 @@
 import { createInterface } from "readline";
-import { flowRight } from "lodash/fp";
-import { read_str, MalType, Atom } from "./reader";
-import { pr_str, assertNever } from "./printer";
+import { read_str } from "./reader";
+import { pr_str } from "./printer";
 import { inspect } from "util";
 import { Env } from "./env";
-
-type Result<T, E> = { type: "ok"; ok: MalType } | { type: "err"; err: Error };
-
-export function LOG(...args: any[]) {
-  // console.log(...args);
-}
+import { assertNever, LOG } from "./utils";
+import { MalType } from "./types";
 
 function READ(str: string): MalType {
   return read_str(str);
@@ -35,10 +30,10 @@ function EVAL(ast: MalType, env: Env): MalType {
         if (f1.atom.symbol === "let*") {
           const newEnv = new Env(env);
           for (let index = 0; index < f2.list.length / 2; index++) {
-            LOG('index', index);
-            const f22 = f2.list[2*index];
-            const f23 = f2.list[2*index + 1];
-            LOG('let*', inspect(f22, false, 10), inspect(f23, false, 10));
+            LOG("index", index);
+            const f22 = f2.list[2 * index];
+            const f23 = f2.list[2 * index + 1];
+            LOG("let*", inspect(f22, false, 10), inspect(f23, false, 10));
             newEnv.set(f22.atom.symbol, EVAL(f23, newEnv));
           }
           return EVAL(f3, newEnv);

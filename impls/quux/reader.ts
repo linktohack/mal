@@ -1,21 +1,4 @@
-import { isNumber } from "util";
-
-export type Tokenized = string;
-
-export type Atom =
-  | { type: "true" }
-  | { type: "false" }
-  | { type: "nil" }
-  | { type: "number"; number: number }
-  | { type: "string"; string: string }
-  | { type: "keyword"; keyword: string }
-  | { type: "symbol"; symbol: string };
-
-export type MalType =
-  | { type: "atom"; atom: Atom }
-  | { type: "list"; list: MalType[] }
-  | { type: "vector"; list: MalType[] }
-  | { type: "hash-map"; list: MalType[] };
+import { Atom, MalType, Tokenized } from "./types";
 
 function makeEOFError(expected: Tokenized) {
   return new Error(`reach EOF before reading a '${expected}' `);

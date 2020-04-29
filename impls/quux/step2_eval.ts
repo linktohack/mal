@@ -1,8 +1,10 @@
 import { createInterface } from "readline";
 import { flowRight } from "lodash/fp";
-import { read_str, MalType, Atom } from "./reader";
-import { pr_str, assertNever } from "./printer";
+import { read_str } from "./reader";
+import { pr_str } from "./printer";
 import { inspect } from "util";
+import { assertNever } from "./utils";
+import { Atom, MalType } from "./types";
 
 type Result<T, E> = { type: "ok"; ok: MalType } | { type: "err"; err: Error };
 

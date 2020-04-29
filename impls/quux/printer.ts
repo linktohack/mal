@@ -1,8 +1,5 @@
-import { MalType } from "./reader";
-
-export function assertNever(x: never) {
-  return new Error(`epecting x to be never: ${x}`);
-}
+import { assertNever } from "./utils";
+import { MalType } from "./types";
 
 export function pr_str(ast: MalType, print_readably = true): string {
   if (ast.type === "atom") {

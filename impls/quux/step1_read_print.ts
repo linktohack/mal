@@ -1,7 +1,8 @@
 import { createInterface } from "readline";
 import { flowRight } from "lodash/fp";
-import { read_str, MalType } from "./reader";
+import { read_str } from "./reader";
 import { pr_str } from "./printer";
+import { MalType } from "./types";
 
 type Result<T, E> = { type: "ok"; ok: MalType } | { type: "err"; err: Error };
 

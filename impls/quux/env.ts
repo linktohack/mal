@@ -1,6 +1,6 @@
-import { MalType } from "./reader";
 import { inspect } from "util";
-import { LOG } from "./step3_env";
+import { LOG } from "./utils";
+import { MalType } from "./types";
 
 export class Env {
   data: {
