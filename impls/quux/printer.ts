@@ -37,6 +37,10 @@ export function pr_str(ast: MalType, print_readably = true): string {
       }
     }
 
+    if (atom.type === "function") {
+      return "#<function>";
+    }
+
     throw assertNever(atom);
   }
 

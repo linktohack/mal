@@ -5,6 +5,7 @@ export type Atom =
   | { type: "false" }
   | { type: "nil" }
   | { type: "number"; number: number }
+  | { type: "function"; function: FuncMalType }
   | { type: "string"; string: string }
   | { type: "keyword"; keyword: string }
   | { type: "symbol"; symbol: string };
@@ -16,6 +17,42 @@ export type MalType =
   | { type: "hash-map"; list: MalType[] };
 
 export type FuncMalType = (...args: MalType[]) => MalType;
-export type EnvType = MalType | FuncMalType;
+
+// export type EnvType = MalType | FuncMalType;
+
+export function makeTrue(): MalType {
+  return { type: "atom", atom: { type: "true" } };
+}
+export function makeFalse(): MalType {
+  return { type: "atom", atom: { type: "false" } };
+}
+export function makeNil(): MalType {
+  return { type: "atom", atom: { type: "nil" } };
+}
+export function makeNumber(number: number): MalType {
+  return { type: "atom", atom: { type: "number", number } };
+}
+export function makeFunction(f: FuncMalType): MalType {
+  return { type: "atom", atom: { type: "function", function: f } };
+}
+export function makeString(string: string): MalType {
+  return { type: "atom", atom: { type: "string", string } };
+}
+export function makeKeyword(keyword: string): MalType {
+  return { type: "atom", atom: { type: "keyword", keyword } };
+}
+export function makeSymbol(symbol: string): MalType {
+  return { type: "atom", atom: { type: "symbol", symbol } };
+}
+
+export function makeList(...list: MalType[]): MalType {
+  return { type: "list", list };
+}
+export function makeVector(...list: MalType[]): MalType {
+  return { type: "vector", list };
+}
+export function makeHashMap(...list: MalType[]): MalType {
+  return { type: "hash-map", list };
+}
 
 type Result<T, E> = { type: "ok"; ok: MalType } | { type: "err"; err: Error };
