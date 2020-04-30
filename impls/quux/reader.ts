@@ -1,4 +1,12 @@
-import { Atom, MalType, Tokenized, makeList, makeVector, makeHashMap, makeSymbol } from "./types";
+import {
+  Atom,
+  MalType,
+  Tokenized,
+  makeList,
+  makeVector,
+  makeHashMap,
+  makeSymbol,
+} from "./types";
 
 function makeEOFError(expected: Tokenized) {
   return new Error(`reach EOF before reading a '${expected}' `);
@@ -65,7 +73,7 @@ function read_form(reader: Reader): MalType {
         const f2 = read_form(reader);
         return makeList(makeSymbol(symbol), f2, f1);
       } else if (symbol) {
-        return makeList(makeSymbol(symbol), read_form(reader))
+        return makeList(makeSymbol(symbol), read_form(reader));
       } else {
         return { type: "atom", atom };
       }

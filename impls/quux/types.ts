@@ -1,3 +1,5 @@
+import { Env } from "./env";
+
 export type Tokenized = string;
 
 export type Atom =
@@ -6,6 +8,13 @@ export type Atom =
   | { type: "nil" }
   | { type: "number"; number: number }
   | { type: "function"; function: FuncMalType }
+  | {
+      type: "tco_function";
+      ast: MalType;
+      params: MalType[];
+      env: Env;
+      fn: MalType;
+    }
   | { type: "string"; string: string }
   | { type: "keyword"; keyword: string }
   | { type: "symbol"; symbol: string };
@@ -34,6 +43,14 @@ export function makeNumber(number: number): MalType {
 }
 export function makeFunction(f: FuncMalType): MalType {
   return { type: "atom", atom: { type: "function", function: f } };
+}
+export function makeTcoFunction(
+  ast: MalType,
+  params: MalType[],
+  env: Env,
+  fn: MalType
+): MalType {
+  return { type: "atom", atom: { type: "tco_function", ast, params, env, fn } };
 }
 export function makeString(string: string): MalType {
   return { type: "atom", atom: { type: "string", string } };

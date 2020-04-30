@@ -41,6 +41,10 @@ export function pr_str(ast: MalType, print_readably = true): string {
       return "#<function>";
     }
 
+    if (atom.type === "tco_function") {
+      return "#<function>";
+    }
+
     throw assertNever(atom);
   }
 
