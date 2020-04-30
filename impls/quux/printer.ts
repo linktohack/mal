@@ -33,7 +33,7 @@ export function pr_str(ast: MalType, print_readably = true): string {
           '"'
         );
       } else {
-        return '"' + atom.string + '"';
+        return atom.string;
       }
     }
 

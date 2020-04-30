@@ -18,7 +18,7 @@ function READ(str: string): MalType {
 }
 
 function EVAL(ast: MalType, env: Env): MalType {
-  LOG("EVAL", inspect(ast, false, 10), inspect(env, false, 10));
+  // LOG("EVAL", inspect(ast, false, 10), inspect(env, false, 10));
   if (ast.type !== "list") {
     return eval_ast(ast, env);
   } else {
@@ -28,15 +28,17 @@ function EVAL(ast: MalType, env: Env): MalType {
       const [f0, f1, f2, f3] = ast.list;
       if (f0.type === "atom" && f0.atom.type === "symbol") {
         if (f0.atom.symbol === "def!") {
-          if (f1.type !== "atom" || f1.atom.type !== "symbol") {
+          if (!f1 || f1.type !== "atom" || f1.atom.type !== "symbol") {
             throw new Error("second element of def! must be a symbol");
           }
           return env.set(f1.atom.symbol, EVAL(f2, env));
         }
 
         if (f0.atom.symbol === "let*") {
-          if (f1.type !== "list") {
-            throw new Error("second element of let* must be a list");
+          if (!f1 || (f1.type !== "list" && f1.type !== "vector")) {
+            throw new Error(
+              "second element of let* must be a list or a vector"
+            );
           }
           const newEnv = new Env(env);
           for (let index = 0; index < f1.list.length / 2; index++) {
@@ -73,8 +75,10 @@ function EVAL(ast: MalType, env: Env): MalType {
         }
 
         if (f0.atom.symbol === "fn*") {
-          if (!f1 || f1.type !== "list") {
-            throw new Error("second form must be a list");
+          if (!f1 || (f1.type !== "list" && f1.type !== "vector")) {
+            throw new Error(
+              "second element of let* must be a list or a vector"
+            );
           }
           return makeFunction((...args) => {
             const newEnv = new Env(env, f1.list, args);
@@ -94,7 +98,7 @@ function EVAL(ast: MalType, env: Env): MalType {
 }
 
 function eval_ast(ast: MalType, env: Env): MalType {
-  LOG("eval_ast", inspect(ast, false, 10));
+  // LOG("eval_ast", inspect(ast, false, 10));
   switch (ast.type) {
     case "atom":
       switch (ast.atom.type) {
@@ -124,8 +128,6 @@ function rep(args: string, env: Env) {
 }
 
 function main_loop() {
-  const env = new Env();
-
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -148,4 +150,7 @@ function main_loop() {
   rl.prompt();
 }
 
+const env = new Env();
+rep("(def! not (fn* (a) (if a false true)))", env);
+rep("(def! sumdown (fn* (a) (if (= 0 a) 0 (+ a (sumdown (- a 1))))))", env);
 main_loop();

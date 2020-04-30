@@ -1,5 +1,7 @@
 export function LOG(...args: any[]) {
-  // console.log(...args);
+  if (process.env.LOG) {
+    console.log(...args);
+  }
 }
 
 export function assertNever(x: never) {

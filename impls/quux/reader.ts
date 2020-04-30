@@ -1,4 +1,4 @@
-import { Atom, MalType, Tokenized } from "./types";
+import { Atom, MalType, Tokenized, makeList, makeVector, makeHashMap, makeSymbol } from "./types";
 
 function makeEOFError(expected: Tokenized) {
   return new Error(`reach EOF before reading a '${expected}' `);
@@ -35,11 +35,11 @@ function tokenize(str: string): Tokenized[] {
 function read_form(reader: Reader): MalType {
   let current = reader.peek();
   if (current === "(") {
-    return { type: "list", list: read_list(reader, ")") };
+    return makeList(...read_list(reader, ")"));
   } else if (current === "[") {
-    return { type: "vector", list: read_list(reader, "]") };
+    return makeVector(...read_list(reader, "]"));
   } else if (current === "{") {
-    return { type: "hash-map", list: read_list(reader, "}") };
+    return makeHashMap(...read_list(reader, "}"));
   } else {
     const atom = read_atom(reader);
     if (atom.type === "symbol") {
@@ -63,19 +63,9 @@ function read_form(reader: Reader): MalType {
       if (symbol === "with-meta") {
         const f1 = read_form(reader);
         const f2 = read_form(reader);
-
-        return {
-          type: "list",
-          list: [{ type: "atom", atom: { type: "symbol", symbol } }, f2, f1],
-        };
+        return makeList(makeSymbol(symbol), f2, f1);
       } else if (symbol) {
-        return {
-          type: "list",
-          list: [
-            { type: "atom", atom: { type: "symbol", symbol } },
-            read_form(reader),
-          ],
-        };
+        return makeList(makeSymbol(symbol), read_form(reader))
       } else {
         return { type: "atom", atom };
       }

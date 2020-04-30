@@ -1,6 +1,6 @@
 import { inspect } from "util";
 import { LOG } from "./utils";
-import { MalType, makeFunction } from "./types";
+import { MalType, makeFunction, makeList } from "./types";
 import { core } from "./core";
 
 export class Env {
@@ -16,18 +16,39 @@ export class Env {
       this.data[k] = makeFunction(core[k]);
     });
 
-    if (binds.length !== exprs.length) {
-      LOG("Env", inspect({ binds, exprs }, false, 10));
-      throw new Error("not enough/too much argument");
-    }
+    // if (binds.length !== exprs.length) {
+    //   LOG("Env", inspect({ binds, exprs }, false, 10));
+    //   throw new Error("not enough/too much argument");
+    // }
 
     for (let index = 0; index < binds.length; index++) {
       const bind = this.binds[index];
       const expr = this.exprs[index];
 
+      if (
+        bind.type === "atom" &&
+        bind.atom.type === "symbol" &&
+        bind.atom.symbol === "&"
+      ) {
+        const next = this.binds[index + 1];
+        const gabarge = this.binds[index + 2];
+
+        if (!next || gabarge) {
+          throw new Error("there should be only one symbol after &");
+        }
+
+        if (next.type !== "atom" || next.atom.type !== "symbol") {
+          throw new Error("arg must be a symbol");
+        }
+        this.set(next.atom.symbol, makeList(...exprs.slice(index)));
+        break;
+      }
+
       if (bind.type !== "atom" || bind.atom.type !== "symbol") {
         throw new Error("arg must be a symbol");
       }
+
+      LOG("bind", bind.atom.symbol, expr);
 
       this.set(bind.atom.symbol, expr);
     }
@@ -38,16 +59,13 @@ export class Env {
     return v;
   }
 
-  find(k: string): MalType {
-    return (
-      this.data[k] ||
-      this.outer?.find(k) || { type: "atom", atom: { type: "nil" } }
-    );
+  find(k: string): MalType | undefined {
+    return this.data[k] || this.outer?.find(k);
   }
 
   get(k: string): MalType {
-    const found = this.find(k) as MalType;
-    if (found.type === "atom" && found.atom.type === "nil") {
+    const found = this.find(k);
+    if (!found) {
       throw new Error(`${k} not found`);
     }
     return found;
