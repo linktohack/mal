@@ -15,7 +15,7 @@ import { inspect } from "util";
 import { read_str } from "./reader";
 
 import { readFileSync } from "fs";
-import { EVAL, env } from "./step6_file";
+import { EVAL, env } from "./step7_quote"; // FIXME(QL): Circular dep
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -122,6 +122,27 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
     }
     LOG("slurp", first.atom.string, readFileSync(first.atom.string, "utf-8"));
     return makeString(readFileSync(first.atom.string, "utf-8"));
+  },
+
+  cons: (first, second, ...rest) => {
+    if (!second || (second.type !== "list" && second.type !== "vector")) {
+      throw new Error("expect list or vector");
+    }
+    return makeList(first, ...second.list);
+  },
+
+  concat: (...args) => {
+    return makeList(
+      ...args.reduce((prev, current) => {
+        if (
+          !current ||
+          (current.type !== "list" && current.type !== "vector")
+        ) {
+          throw new Error("expect list or vector");
+        }
+        return prev.concat(current.list);
+      }, [] as MalType[])
+    );
   },
 
   eval: (first, ...rest) => {
