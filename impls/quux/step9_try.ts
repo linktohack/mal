@@ -205,7 +205,14 @@ function eval_ast(ast: MalType, env: Env): MalType {
     case "vector":
       return makeVector(...ast.list.map((it) => EVAL(it, env)));
     case "hash-map":
-      return makeHashMap(...ast.list.map((it) => EVAL(it, env)));
+      const newHashMap = {
+        type: "hash-map" as const,
+        list: new Map<MalType, MalType>(),
+      }; // FIXME(QL): A lot of union...
+      ast.list.forEach((v, k) => {
+        newHashMap.list.set(EVAL(k, env), EVAL(v, env));
+      });
+      return newHashMap;
     default:
       throw assertNever(ast);
   }

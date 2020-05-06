@@ -26,7 +26,7 @@ export type MalType =
   | { type: "atom"; atom: Atom }
   | { type: "list"; list: MalType[] }
   | { type: "vector"; list: MalType[] }
-  | { type: "hash-map"; list: MalType[] };
+  | { type: "hash-map"; list: Map<MalType, MalType> };
 
 export type FuncMalType = (...args: MalType[]) => MalType;
 
@@ -82,7 +82,16 @@ export function makeVector(...list: MalType[]): MalType {
   return { type: "vector", list };
 }
 export function makeHashMap(...list: MalType[]): MalType {
-  return { type: "hash-map", list };
+  const map = new Map<MalType, MalType>();
+  if (list.length % 2 === 1) {
+    throw new Error("expect even number of arguments");
+  }
+  for (let index = 0; index < list.length / 2; index++) {
+    const k = list[2 * index];
+    const v = list[2 * index + 1];
+    map.set(k, v);
+  }
+  return { type: "hash-map", list: map };
 }
 
 export function is_symbol(ast: MalType) {

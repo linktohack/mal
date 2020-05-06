@@ -282,7 +282,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
     if (!first || first.type !== "atom" || first.atom.type !== "string") {
       throw new Error("expect string");
     }
-    return makeKeyword(first.atom.string);
+    return makeKeyword(":" + first.atom.string);
   },
 
   vector: (...args) => {
@@ -318,18 +318,17 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect even number of arguments");
     }
 
-    const newHashMap = { type: "hash-map" as const, list: [] as MalType[] }; // FIXME(QL): A lot of union...
+    const newHashMap = {
+      type: "hash-map" as const,
+      list: new Map<MalType, MalType>(),
+    }; // FIXME(QL): A lot of union...
 
-    for (let index = 0; index < hashMap.list.length / 2; index++) {
-      const key = args[2 * index];
-      const val = args[2 * index + 1];
+    hashMap.list.forEach((val, key) => {
+      newHashMap.list.set(key, val);
+    });
 
-      const found = args.indexOf(key);
-      if (found > -1) {
-        newHashMap.list = newHashMap.list.concat([key, args[found + 1]]);
-      } else {
-        newHashMap.list = newHashMap.list.concat([key, val]);
-      }
+    for (let index = 0; index < args.length / 2; index++) {
+      newHashMap.list.set(args[2 * index], args[2 * index + 1]);
     }
 
     return newHashMap;
@@ -340,47 +339,60 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect hash-map");
     }
 
-    const newHashMap = { type: "hash-map" as const, list: [] as MalType[] }; // FIXME(QL): A lot of union...
+    const newHashMap = {
+      type: "hash-map" as const,
+      list: new Map<MalType, MalType>(),
+    }; // FIXME(QL): A lot of union...
 
-    for (let index = 0; index < hashMap.list.length / 2; index++) {
-      const key = args[2 * index];
-      const val = args[2 * index + 1];
-
-      const found = args.indexOf(key);
-      if (found === -1) {
-        newHashMap.list = newHashMap.list.concat([key, val]);
+    hashMap.list.forEach((val, key) => {
+      const eqlKey = isEqual(key);
+      const found = args.find(eqlKey);
+      if (!found) {
+        newHashMap.list.set(key, val);
       }
-    }
+    });
 
     return newHashMap;
   },
 
   get: (hashMap, key, ...rest) => {
+    if (hashMap && hashMap.type === "atom" && hashMap.atom.type === "nil") {
+      return makeNil();
+    }
+
     if (!hashMap || hashMap.type !== "hash-map") {
       throw new Error("expect hash-map");
     }
 
-    for (let index = 0; index < hashMap.list.length / 2; index++) {
-      if (isEqual(key)(hashMap.list[2 * index])) {
-        return hashMap.list[2 * index + 1];
+    // return hashMap.list.get(key) || makeNil();
+    let found: MalType | undefined;
+    const eqlKey = isEqual(key);
+    hashMap.list.forEach((val, key2) => {
+      if (eqlKey(key2)) {
+        found = val;
       }
-    }
-
-    return makeNil();
+    });
+    return found || makeNil(); //FIXME(QL): Try native implement instead...
   },
 
-  contains: (hashMap, key, ...rest) => {
+  "contains?": (hashMap, key, ...rest) => {
+    if (hashMap && hashMap.type === "atom" && hashMap.atom.type === "nil") {
+      return makeFalse();
+    }
+
     if (!hashMap || hashMap.type !== "hash-map") {
       throw new Error("expect hash-map");
     }
 
-    for (let index = 0; index < hashMap.list.length / 2; index++) {
-      if (isEqual(key)(hashMap.list[2 * index])) {
-        return makeTrue();
+    // return (hashMap.list.get(key) && makeTrue()) || makeFalse();
+    let found: MalType | undefined;
+    const eqlKey = isEqual(key);
+    hashMap.list.forEach((val, key2) => {
+      if (eqlKey(key2)) {
+        found = val;
       }
-    }
-
-    return makeFalse();
+    });
+    return (found && makeTrue()) || makeFalse(); //FIXME(QL): Try native implement instead...
   },
 
   keys: (hashMap, ...rest) => {
@@ -388,7 +400,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect hash-map");
     }
 
-    return makeList(...hashMap.list.filter((it, index) => index % 2 === 0));
+    return makeList(...hashMap.list.keys());
   },
 
   vals: (hashMap, ...rest) => {
@@ -396,7 +408,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect hash-map");
     }
 
-    return makeList(...hashMap.list.filter((it, index) => index % 2 === 1));
+    return makeList(...hashMap.list.values());
   },
 
   eval: (first, ...rest) => {

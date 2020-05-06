@@ -70,9 +70,14 @@ export function pr_str(ast: MalType, print_readably = true): string {
   }
 
   if (ast.type === "hash-map") {
-    return (
-      "{" + ast.list.map((it) => pr_str(it, print_readably)).join(" ") + "}"
-    );
+    let result = [] as string[];
+    ast.list.forEach((v, k) => {
+      result = result.concat([
+        pr_str(k, print_readably),
+        pr_str(v, print_readably),
+      ]);
+    });
+    return "{" + result.join(" ") + "}";
   }
 
   throw assertNever(ast);
