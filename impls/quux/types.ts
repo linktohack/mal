@@ -19,7 +19,8 @@ export type Atom =
   | { type: "string"; string: string }
   | { type: "keyword"; keyword: string }
   | { type: "symbol"; symbol: string }
-  | { type: "clojure-atom"; atom: MalType };
+  | { type: "clojure-atom"; atom: MalType }
+  | { type: "error"; atom: MalType };
 
 export type MalType =
   | { type: "atom"; atom: Atom }
@@ -70,6 +71,9 @@ export function makeSymbol(symbol: string): MalType {
 export function makeClojureAtom(atom: MalType): MalType {
   return { type: "atom", atom: { type: "clojure-atom", atom } };
 }
+export function makeError(atom: MalType): MalType {
+  return { type: "atom", atom: { type: "error", atom } };
+}
 
 export function makeList(...list: MalType[]): MalType {
   return { type: "list", list };
@@ -79,6 +83,42 @@ export function makeVector(...list: MalType[]): MalType {
 }
 export function makeHashMap(...list: MalType[]): MalType {
   return { type: "hash-map", list };
+}
+
+export function is_symbol(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "symbol";
+}
+export function is_keyword(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "keyword";
+}
+export function is_number(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "number";
+}
+export function is_string(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "string";
+}
+export function is_error(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "error";
+}
+export function is_nil(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "nil";
+}
+export function is_true(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "true";
+}
+export function is_false(ast: MalType) {
+  return ast && ast.type === "atom" && ast.atom.type === "false";
+}
+
+export function is_list(ast: MalType) {
+  return ast && ast.type === "list";
+}
+
+export function is_vector(ast: MalType) {
+  return ast && ast.type === "vector";
+}
+export function is_hash_map(ast: MalType) {
+  return ast && ast.type === "hash-map";
 }
 
 type Result<T, E> = { type: "ok"; ok: MalType } | { type: "err"; err: Error };

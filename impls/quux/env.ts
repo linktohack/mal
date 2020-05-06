@@ -62,7 +62,7 @@ export class Env {
   get(k: string): MalType {
     const found = this.find(k);
     if (!found) {
-      throw new Error(`${k} not found`);
+      throw new Error(`'${k}' not found`);
     }
     return found;
   }

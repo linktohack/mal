@@ -7,15 +7,29 @@ import {
   makeNil,
   makeString,
   makeClojureAtom,
+  FuncMalType,
+  is_symbol,
+  is_true,
+  is_nil,
+  is_false,
+  is_string,
+  makeSymbol,
+  makeKeyword,
+  makeVector,
+  is_vector,
+  is_list,
+  makeHashMap,
+  is_hash_map,
+  is_keyword,
 } from "./types";
 import { LOG } from "./utils";
-import { isEqual } from "lodash/fp";
+import { isEqual, flatten } from "lodash/fp";
 import { pr_str } from "./printer";
 import { inspect } from "util";
 import { read_str } from "./reader";
 
 import { readFileSync } from "fs";
-import { EVAL, env } from "./step8_macros"; // FIXME(QL): Circular dep
+import { EVAL, env } from "./step9_try"; // FIXME(QL): Circular dep
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -160,7 +174,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   },
 
   first: (list, ...args) => {
-    if (list && list.type === 'atom' && list.atom.type === 'nil') {
+    if (list && list.type === "atom" && list.atom.type === "nil") {
       return makeNil();
     }
 
@@ -172,7 +186,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   },
 
   rest: (list, ...args) => {
-    if (list && list.type === 'atom' && list.atom.type === 'nil') {
+    if (list && list.type === "atom" && list.atom.type === "nil") {
       return makeList();
     }
 
@@ -182,6 +196,207 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
 
     const [_, ...realRest] = list.list;
     return makeList(...realRest);
+  },
+
+  throw: (first, ...rest) => {
+    throw new Error(pr_str(first, true));
+  },
+
+  apply: (fn, ...args) => {
+    const realArgs = args.reduce((prev, curr) => {
+      if (curr.type === "list" || curr.type === "vector") {
+        return prev.concat(curr.list);
+      }
+      return prev.concat(curr);
+    }, [] as MalType[]);
+
+    let realFn: FuncMalType | undefined;
+    if (fn && fn.type === "atom" && fn.atom.type === "tco_function") {
+      realFn = (fn.atom.fn as any).atom.function;
+    }
+
+    if (fn && fn.type === "atom" && fn.atom.type === "function") {
+      realFn = fn.atom.function;
+    }
+
+    if (realFn) {
+      return realFn(...realArgs);
+    }
+
+    throw new Error("expect function");
+  },
+
+  map: (fn, args) => {
+    let realFn: FuncMalType | undefined;
+    if (fn && fn.type === "atom" && fn.atom.type === "tco_function") {
+      realFn = (fn.atom.fn as any).atom.function;
+    }
+
+    if (fn && fn.type === "atom" && fn.atom.type === "function") {
+      realFn = fn.atom.function;
+    }
+
+    if (!args || (args.type !== "list" && args.type !== "vector")) {
+      throw new Error("exect sequential");
+    }
+
+    if (realFn) {
+      return makeList(...(args.list.map((it) => realFn!(it)) as MalType[]));
+    }
+
+    throw new Error("expect function");
+  },
+
+  "symbol?": (first, ...rest) => {
+    return is_symbol(first) ? makeTrue() : makeFalse();
+  },
+
+  "keyword?": (first, ...rest) => {
+    return is_keyword(first) ? makeTrue() : makeFalse();
+  },
+
+  "nil?": (first, ...rest) => {
+    return is_nil(first) ? makeTrue() : makeFalse();
+  },
+
+  "true?": (first, ...rest) => {
+    return is_true(first) ? makeTrue() : makeFalse();
+  },
+
+  "false?": (first, ...rest) => {
+    return is_false(first) ? makeTrue() : makeFalse();
+  },
+
+  symbol: (first, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "string") {
+      throw new Error("expect string");
+    }
+    return makeSymbol(first.atom.string);
+  },
+
+  keyword: (first, ...rest) => {
+    if (first && first.type === "atom" && first.atom.type === "keyword") {
+      return first;
+    }
+
+    if (!first || first.type !== "atom" || first.atom.type !== "string") {
+      throw new Error("expect string");
+    }
+    return makeKeyword(first.atom.string);
+  },
+
+  vector: (...args) => {
+    return makeVector(...args);
+  },
+
+  "vector?": (first, ...rest) => {
+    return is_vector(first) ? makeTrue() : makeFalse();
+  },
+
+  "sequential?": (first, ...rest) => {
+    return is_vector(first) || is_list(first) ? makeTrue() : makeFalse();
+  },
+
+  "hash-map": (...args) => {
+    if (args.length % 2 !== 0) {
+      throw new Error("expect even number of arguments");
+    }
+
+    return makeHashMap(...args);
+  },
+
+  "map?": (first, ...rest) => {
+    return is_hash_map(first) ? makeTrue() : makeFalse();
+  },
+
+  assoc: (hashMap, ...args) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    if (args.length % 2 !== 0) {
+      throw new Error("expect even number of arguments");
+    }
+
+    const newHashMap = { type: "hash-map" as const, list: [] as MalType[] }; // FIXME(QL): A lot of union...
+
+    for (let index = 0; index < hashMap.list.length / 2; index++) {
+      const key = args[2 * index];
+      const val = args[2 * index + 1];
+
+      const found = args.indexOf(key);
+      if (found > -1) {
+        newHashMap.list = newHashMap.list.concat([key, args[found + 1]]);
+      } else {
+        newHashMap.list = newHashMap.list.concat([key, val]);
+      }
+    }
+
+    return newHashMap;
+  },
+
+  dissoc: (hashMap, ...args) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    const newHashMap = { type: "hash-map" as const, list: [] as MalType[] }; // FIXME(QL): A lot of union...
+
+    for (let index = 0; index < hashMap.list.length / 2; index++) {
+      const key = args[2 * index];
+      const val = args[2 * index + 1];
+
+      const found = args.indexOf(key);
+      if (found === -1) {
+        newHashMap.list = newHashMap.list.concat([key, val]);
+      }
+    }
+
+    return newHashMap;
+  },
+
+  get: (hashMap, key, ...rest) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    for (let index = 0; index < hashMap.list.length / 2; index++) {
+      if (isEqual(key)(hashMap.list[2 * index])) {
+        return hashMap.list[2 * index + 1];
+      }
+    }
+
+    return makeNil();
+  },
+
+  contains: (hashMap, key, ...rest) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    for (let index = 0; index < hashMap.list.length / 2; index++) {
+      if (isEqual(key)(hashMap.list[2 * index])) {
+        return makeTrue();
+      }
+    }
+
+    return makeFalse();
+  },
+
+  keys: (hashMap, ...rest) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    return makeList(...hashMap.list.filter((it, index) => index % 2 === 0));
+  },
+
+  vals: (hashMap, ...rest) => {
+    if (!hashMap || hashMap.type !== "hash-map") {
+      throw new Error("expect hash-map");
+    }
+
+    return makeList(...hashMap.list.filter((it, index) => index % 2 === 1));
   },
 
   eval: (first, ...rest) => {

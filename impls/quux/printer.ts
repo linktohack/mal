@@ -49,6 +49,11 @@ export function pr_str(ast: MalType, print_readably = true): string {
       return "(atom " + pr_str(atom.atom, print_readably) + ")";
     }
 
+    if (atom.type === "error") {
+      // return `#<error ${atom.atom.name}(${atom.atom.message})>`;
+      return pr_str(atom.atom, print_readably);
+    }
+
     throw assertNever(atom);
   }
 
