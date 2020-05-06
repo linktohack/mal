@@ -6,12 +6,16 @@ import {
   makeFalse,
   makeNil,
   makeString,
+  makeClojureAtom,
 } from "./types";
 import { LOG } from "./utils";
 import { isEqual } from "lodash/fp";
 import { pr_str } from "./printer";
 import { inspect } from "util";
 import { read_str } from "./reader";
+
+import { readFileSync } from "fs";
+import { EVAL, env } from "./step6_file";
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -47,7 +51,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
         throw new Error("* can be use with number");
       }
       return prev * curr.atom.number;
-    }, 0);
+    }, 1);
     return makeNumber(number);
   },
 
@@ -103,6 +107,79 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
     }
     LOG("count", inspect(args, false, 10));
     return makeNumber(args[0].list.length);
+  },
+
+  "read-string": (first, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "string") {
+      throw new Error("expect string");
+    }
+    return read_str(first.atom.string);
+  },
+
+  slurp: (first, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "string") {
+      throw new Error("expect string");
+    }
+    LOG("slurp", first.atom.string, readFileSync(first.atom.string, "utf-8"));
+    return makeString(readFileSync(first.atom.string, "utf-8"));
+  },
+
+  eval: (first, ...rest) => {
+    return EVAL(first, env);
+  },
+
+  atom: (first, ...rest) => {
+    return makeClojureAtom(first);
+  },
+
+  "atom?": (first, ...rest) => {
+    return first && first.type === "atom" && first.atom.type === "clojure-atom"
+      ? makeTrue()
+      : makeFalse();
+  },
+
+  "reset!": (first, second, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "clojure-atom") {
+      throw new Error("expect clojuure-atom");
+    }
+    if (!second) {
+      throw new Error("expect second");
+    }
+
+    first.atom.atom = second;
+    return second;
+  },
+
+  "swap!": (first, second, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "clojure-atom") {
+      throw new Error("expect clojuure-atom");
+    }
+    let f: ((...args: MalType[]) => MalType) | undefined;
+    if (second && second.type === "atom" && second.atom.type === "function") {
+      f = second.atom.function;
+    }
+
+    if (
+      second &&
+      second.type === "atom" &&
+      second.atom.type === "tco_function"
+    ) {
+      f = (second.atom.fn as any).atom.function;
+    }
+
+    if (!f) {
+      throw new Error("expect function");
+    }
+    const newVal = f(...[first.atom.atom, ...rest]); // FIXME(QL): Strong typing
+    first.atom.atom = newVal;
+    return newVal;
+  },
+
+  deref: (first, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "clojure-atom") {
+      throw new Error("expect clojure-atom");
+    }
+    return first.atom.atom;
   },
 
   "=": (first, ...rest) => {

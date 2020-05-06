@@ -17,7 +17,8 @@ export type Atom =
     }
   | { type: "string"; string: string }
   | { type: "keyword"; keyword: string }
-  | { type: "symbol"; symbol: string };
+  | { type: "symbol"; symbol: string }
+  | { type: "clojure-atom"; atom: MalType };
 
 export type MalType =
   | { type: "atom"; atom: Atom }
@@ -60,6 +61,9 @@ export function makeKeyword(keyword: string): MalType {
 }
 export function makeSymbol(symbol: string): MalType {
   return { type: "atom", atom: { type: "symbol", symbol } };
+}
+export function makeClojureAtom(atom: MalType): MalType {
+  return { type: "atom", atom: { type: "clojure-atom", atom } };
 }
 
 export function makeList(...list: MalType[]): MalType {

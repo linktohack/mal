@@ -12,10 +12,6 @@ export class Env {
     public binds: MalType[] = [],
     public exprs: MalType[] = []
   ) {
-    Object.keys(core).forEach((k) => {
-      this.data[k] = makeFunction(core[k]);
-    });
-
     // if (binds.length !== exprs.length) {
     //   LOG("Env", inspect({ binds, exprs }, false, 10));
     //   throw new Error("not enough/too much argument");

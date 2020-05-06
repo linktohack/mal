@@ -1,11 +1,11 @@
 import {
   Atom,
+  makeHashMap,
+  makeList,
+  makeSymbol,
+  makeVector,
   MalType,
   Tokenized,
-  makeList,
-  makeVector,
-  makeHashMap,
-  makeSymbol,
 } from "./types";
 
 function makeEOFError(expected: Tokenized) {
@@ -21,7 +21,7 @@ class Reader {
     return this.tokens[this.current];
   }
 
-  next() {
+  next(): string | undefined {
     const peeked = this.peek();
     this.current = this.current + 1;
     return peeked;
@@ -42,6 +42,11 @@ function tokenize(str: string): Tokenized[] {
 
 function read_form(reader: Reader): MalType {
   let current = reader.peek();
+  while (current && current.startsWith(";")) {
+    // Skip comment for the moment
+    let _ = reader.next();
+    current = reader.peek();
+  }
   if (current === "(") {
     return makeList(...read_list(reader, ")"));
   } else if (current === "[") {
@@ -106,6 +111,10 @@ function read_list(reader: Reader, expected_end_token: Tokenized): MalType[] {
 
 function read_atom(reader: Reader): Atom {
   const atom = reader.next();
+  if (!atom) {
+    return { type: "nil" };
+  }
+
   if (atom === "true" || atom === "false" || atom === "nil") {
     return { type: atom };
   }
@@ -116,14 +125,37 @@ function read_atom(reader: Reader): Atom {
   }
 
   if (atom.startsWith('"')) {
-    try {
-      const parsed = JSON.parse(atom); // FIXME (QL): Too lazy
-      if (typeof parsed === "string") {
-        return { type: "string", string: parsed };
-      }
-    } catch {
+    if (atom.length < 2 || !atom.endsWith('"')) {
       throw makeEOFError('"');
     }
+
+    let parsed = "";
+    let i = 1;
+    while (i < atom.length - 1) {
+      if (atom[i] === "\\") {
+        if (i === atom.length - 2) {
+          throw new Error("Trailing escape");
+        }
+        switch (atom[i + 1]) {
+          case "\\":
+            parsed = parsed + "\\";
+            break;
+          case '"':
+            parsed = parsed + '"';
+            break;
+          case "n":
+            parsed = parsed + "\n";
+            break;
+          default:
+            throw new Error("Unknown escape: \\" + atom[i + 1]);
+        }
+        i = i + 2;
+      } else {
+        parsed = parsed + atom[i];
+        i = i + 1;
+      }
+    }
+    return { type: "string", string: parsed };
   }
 
   if (atom.startsWith(":")) {

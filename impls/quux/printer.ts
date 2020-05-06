@@ -45,6 +45,10 @@ export function pr_str(ast: MalType, print_readably = true): string {
       return "#<function>";
     }
 
+    if (atom.type === "clojure-atom") {
+      return "(atom " + pr_str(atom.atom, print_readably) + ")";
+    }
+
     throw assertNever(atom);
   }
 
