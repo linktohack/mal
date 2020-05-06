@@ -14,6 +14,7 @@ export type Atom =
       params: MalType[];
       env: Env;
       fn: MalType;
+      is_macro: boolean;
     }
   | { type: "string"; string: string }
   | { type: "keyword"; keyword: string }
@@ -49,9 +50,13 @@ export function makeTcoFunction(
   ast: MalType,
   params: MalType[],
   env: Env,
-  fn: MalType
+  fn: MalType,
+  is_macro = false
 ): MalType {
-  return { type: "atom", atom: { type: "tco_function", ast, params, env, fn } };
+  return {
+    type: "atom",
+    atom: { type: "tco_function", ast, params, env, fn, is_macro },
+  };
 }
 export function makeString(string: string): MalType {
   return { type: "atom", atom: { type: "string", string } };

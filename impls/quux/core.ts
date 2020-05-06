@@ -15,7 +15,7 @@ import { inspect } from "util";
 import { read_str } from "./reader";
 
 import { readFileSync } from "fs";
-import { EVAL, env } from "./step7_quote"; // FIXME(QL): Circular dep
+import { EVAL, env } from "./step8_macros"; // FIXME(QL): Circular dep
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -143,6 +143,45 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
         return prev.concat(current.list);
       }, [] as MalType[])
     );
+  },
+
+  nth: (list, index, ...rest) => {
+    if (!index || index.type !== "atom" || index.atom.type !== "number") {
+      throw new Error("expect number");
+    }
+    if (!list || (list.type !== "list" && list.type !== "vector")) {
+      throw new Error("expect list or vector");
+    }
+    if (list.list[index.atom.number]) {
+      return list.list[index.atom.number];
+    }
+
+    throw new Error("index out of range");
+  },
+
+  first: (list, ...args) => {
+    if (list && list.type === 'atom' && list.atom.type === 'nil') {
+      return makeNil();
+    }
+
+    if (!list || (list.type !== "list" && list.type !== "vector")) {
+      throw new Error("expect list or vector");
+    }
+
+    return list.list[0] || makeNil();
+  },
+
+  rest: (list, ...args) => {
+    if (list && list.type === 'atom' && list.atom.type === 'nil') {
+      return makeList();
+    }
+
+    if (!list || (list.type !== "list" && list.type !== "vector")) {
+      throw new Error("expect list or vector");
+    }
+
+    const [_, ...realRest] = list.list;
+    return makeList(...realRest);
   },
 
   eval: (first, ...rest) => {
