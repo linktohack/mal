@@ -1,35 +1,35 @@
 import {
-  MalType,
-  makeNumber,
-  makeList,
-  makeTrue,
-  makeFalse,
-  makeNil,
-  makeString,
-  makeClojureAtom,
   FuncMalType,
-  is_symbol,
-  is_true,
-  is_nil,
   is_false,
-  is_string,
-  makeSymbol,
-  makeKeyword,
-  makeVector,
-  is_vector,
-  is_list,
-  makeHashMap,
   is_hash_map,
   is_keyword,
+  is_list,
+  is_nil,
+  is_symbol,
+  is_true,
+  is_vector,
+  makeClojureAtom,
+  makeError,
+  makeFalse,
+  makeHashMap,
+  makeKeyword,
+  makeList,
+  makeNil,
+  makeNumber,
+  makeString,
+  makeSymbol,
+  makeTrue,
+  makeVector,
+  MalType,
 } from "./types";
 import { LOG } from "./utils";
-import { isEqual, flatten } from "lodash/fp";
+import { isEqual } from "lodash/fp";
 import { pr_str } from "./printer";
 import { inspect } from "util";
 import { read_str } from "./reader";
 
 import { readFileSync } from "fs";
-import { EVAL, env } from "./step9_try"; // FIXME(QL): Circular dep
+import { env, EVAL } from "./step9_try"; // FIXME(QL): Circular dep
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -199,7 +199,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   },
 
   throw: (first, ...rest) => {
-    throw new Error(pr_str(first, true));
+    throw makeError(first);
   },
 
   apply: (fn, ...args) => {

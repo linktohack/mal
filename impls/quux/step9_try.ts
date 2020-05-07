@@ -5,15 +5,15 @@ import { inspect } from "util";
 import { Env } from "./env";
 import { assertNever, LOG } from "./utils";
 import {
+  makeError,
   makeFunction,
-  makeHashMap,
   makeList,
   makeNil,
+  makeString,
+  makeSymbol,
   makeTcoFunction,
   makeVector,
   MalType,
-  makeSymbol,
-  makeError,
 } from "./types";
 import { core } from "./core";
 
@@ -67,29 +67,38 @@ export function EVAL(ast: MalType, env: Env): MalType {
       }
 
       if (f0.atom.symbol === "try*") {
-        const formError = new Error("expect (catch* error form");
-        if (f2.type !== "list") {
-          throw formError;
-        }
-        const [maybeCatch, error, catchForm] = f2.list;
-        if (!makeFunction || !error || !catchForm) {
-          throw formError;
-        }
-        if (
-          maybeCatch.type !== "atom" ||
-          maybeCatch.atom.type !== "symbol" ||
-          maybeCatch.atom.symbol !== "catch*"
-        ) {
-          throw formError;
-        }
-        if (maybeCatch.type !== "atom" || maybeCatch.atom.type !== "symbol") {
-          throw formError;
-        }
+        // const formError = new Error("expect (catch* error form");
+        // if (!f2 || f2.type !== "list") {
+        //   throw formError;
+        // }
+        // const [maybeCatch, error, catchForm] = f2.list;
+        // if (!maybeCatch || !error || !catchForm) {
+        //   throw formError;
+        // }
+        // if (
+        //   maybeCatch.type !== "atom" ||
+        //   maybeCatch.atom.type !== "symbol" ||
+        //   maybeCatch.atom.symbol !== "catch*"
+        // ) {
+        //   throw formError;
+        // }
+        // if (maybeCatch.type !== "atom" || maybeCatch.atom.type !== "symbol") {
+        //   throw formError;
+        // }
+        const [maybeCatch, error, catchForm] =
+          (f2 && (f2 as any).list) || ([] as MalType[]);
         try {
           ast = EVAL(f1, env);
           continue;
         } catch (err) {
-          const newEnv = new Env(env, [error], [makeError(err)]);
+          if (!maybeCatch || !error || !catchForm) {
+            throw err;
+          }
+          let malError = err;
+          if (err instanceof Error) {
+            malError = makeError(makeString(err.message));
+          }
+          const newEnv = new Env(env, [error], [malError]); // FIXME(QL): Handle error here
           ast = catchForm;
           env = newEnv;
           continue;
@@ -354,7 +363,11 @@ function main_loop() {
     try {
       rep(answer, env);
     } catch (err) {
-      console.log("Error: " + err.message);
+      if (err instanceof Error) {
+        console.log("System Error: " + err.message);
+      } else {
+        console.log("Mal Error: " + pr_str(err, true));
+      }
     }
     rl.prompt();
     // }
