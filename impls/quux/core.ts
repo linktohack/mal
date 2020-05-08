@@ -29,7 +29,8 @@ import { inspect } from "util";
 import { read_str } from "./reader";
 
 import { readFileSync } from "fs";
-import { env, EVAL } from "./step9_try"; // FIXME(QL): Circular dep
+import { env, EVAL } from "./stepA_mal"; // FIXME(QL): Circular dep
+import { readline } from "./node_readline";
 
 export const core: { [k: string]: (...args: MalType[]) => MalType } = {
   "+": (...args) => {
@@ -400,7 +401,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect hash-map");
     }
 
-    return makeList(...hashMap.list.keys());
+    return makeList(...Array.from(hashMap.list.keys()));
   },
 
   vals: (hashMap, ...rest) => {
@@ -408,7 +409,7 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("expect hash-map");
     }
 
-    return makeList(...hashMap.list.values());
+    return makeList(...Array.from(hashMap.list.values()));
   },
 
   eval: (first, ...rest) => {
@@ -522,5 +523,49 @@ export const core: { [k: string]: (...args: MalType[]) => MalType } = {
       throw new Error("arg1 must be a number");
     }
     return first.atom.number >= second.atom.number ? makeTrue() : makeFalse();
+  },
+
+  readline: (first, ...rest) => {
+    if (!first || first.type !== "atom" || first.atom.type !== "string") {
+      throw new Error("arg0 must be a string");
+    }
+    const answer = readline(first.atom.string);
+    return (answer && makeString(answer)) || makeNil();
+  },
+
+  "time-ms": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  meta: (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  "with-meta": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  "fn?": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  "macro?": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  "number?": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  "string?": (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  seq: (first, ...rest) => {
+    throw new Error("not implemented");
+  },
+
+  conj: (first, ...rest) => {
+    throw new Error("not implemented");
   },
 };

@@ -56,7 +56,7 @@ export class Env {
   }
 
   find(k: string): MalType | undefined {
-    return this.data[k] || this.outer?.find(k);
+    return this.data[k] || (this.outer && this.outer.find(k));
   }
 
   get(k: string): MalType {

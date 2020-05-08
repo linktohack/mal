@@ -134,7 +134,7 @@ function read_atom(reader: Reader): Atom {
     while (i < atom.length - 1) {
       if (atom[i] === "\\") {
         if (i === atom.length - 2) {
-          throw new Error("Trailing escape");
+          throw new Error("unbalanced");
         }
         switch (atom[i + 1]) {
           case "\\":
@@ -147,7 +147,7 @@ function read_atom(reader: Reader): Atom {
             parsed = parsed + "\n";
             break;
           default:
-            throw new Error("Unknown escape: \\" + atom[i + 1]);
+            throw new Error("unbalanced: \\" + atom[i + 1]);
         }
         i = i + 2;
       } else {

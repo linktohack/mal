@@ -10,8 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/ffi-napi": "^2.4.1",
     "@types/lodash": "^4.14.150",
     "@types/node": "^13.13.4",
-    "lodash": "^4.17.15"
+    "ffi-napi": "^2.5.0",
+    "lodash": "^4.17.15",
+    "ts-node": "^8.10.1",
+    "typescript": "^3.8.3"
   }
 }
